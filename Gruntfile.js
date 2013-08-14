@@ -31,8 +31,13 @@ module.exports = function(grunt) {
         dest: 'dist/<%= pkg.name %>.min.js'
       },
     },
-    nodeunit: {
-      files: ['test/**/*_test.js']
+    mocha: {
+      all: {
+        src: ['test/**/*.html']
+      },
+      options: {
+        reporter: 'Spec'
+      }
     },
     jshint: {
       options: {
@@ -48,7 +53,10 @@ module.exports = function(grunt) {
         src: ['lib/**/*.js']
       },
       test: {
-        src: ['test/**/*.js']
+        src: ['test/**/*.js'],
+        options: {
+          jshintrc: 'test/.jshintrc'
+        }
       },
     },
     watch: {
@@ -58,23 +66,32 @@ module.exports = function(grunt) {
       },
       lib: {
         files: '<%= jshint.lib.src %>',
-        tasks: ['jshint:lib', 'nodeunit']
+        tasks: ['jshint:lib', 'mocha']
       },
       test: {
         files: '<%= jshint.test.src %>',
-        tasks: ['jshint:test', 'nodeunit']
+        tasks: ['jshint:test', 'mocha']
       },
     },
+    notify: {
+      done: {
+        options: {
+          message: 'Project built'
+        }
+      }
+    }
   });
 
   // These plugins provide necessary tasks.
   grunt.loadNpmTasks('grunt-contrib-concat');
   grunt.loadNpmTasks('grunt-contrib-uglify');
-  grunt.loadNpmTasks('grunt-contrib-nodeunit');
+  grunt.loadNpmTasks('grunt-mocha');
   grunt.loadNpmTasks('grunt-contrib-jshint');
   grunt.loadNpmTasks('grunt-contrib-watch');
 
+  grunt.loadNpmTasks('grunt-notify');
+
   // Default task.
-  grunt.registerTask('default', ['jshint', 'nodeunit', 'concat', 'uglify']);
+  grunt.registerTask('default', ['jshint', 'mocha', 'concat', 'uglify', 'notify:done']);
 
 };
