@@ -1,4 +1,4 @@
-/*! expose.js - v0.1.0 - 2013-08-14
+/*! expose.js - v0.1.0 - 2013-08-15
  * https://github.com/wnr/expose.js
  * Copyright (c) 2013 Lucas Wiener; Licensed MIT
  */
@@ -12,26 +12,17 @@
  * Licensed under the MIT license.
  */
 
-(function(context, parseCSS) {
+(function(context) {
   'use strict';
 
-  var expose = {};
-
-  if(!parseCSS) {
-    throw new Error('A CSS parser is required.');
-  }
-
-  expose.parseCSS = function() {
-
-  };
+  context.expose = {};
+  var expose = context.expose;
 
   expose.run = function() {
 
   };
 
-  context.expose = expose;
-
-}(typeof exports === 'object' && exports || this), (typeof parseCSS === 'object' && parseCSS));
+}(typeof exports === 'object' && exports || this));
 
 /**
  * Downloaded from https://github.com/visionmedia/css-parse/blob/master/index.js
@@ -40,465 +31,476 @@
  *
  * author: https://github.com/visionmedia
  *
- * Changed by Lucas Wiener to work natively in browser.
+ * Changed by Lucas Wiener to work better with this project.
  */
 
-var parseCSS = function(css, options){
-  options = options || {};
+(function(context) {
 
-  /**
-   * Positional.
-   */
-
-  var lineno = 1;
-  var column = 1;
-
-  /**
-   * Update lineno and column based on `str`.
-   */
-
-  function updatePosition(str) {
-    var lines = str.match(/\n/g);
-    if (lines) lineno += lines.length;
-    var i = str.lastIndexOf('\n');
-    column = ~i ? str.length - i : column + str.length;
+  if(!context.expose) {
+    throw new Error('CSS parser requires an expose object to be defined in context.');
   }
 
-  /**
-   * Mark position and patch `node.position`.
-   */
+  if(context.expose.parseCSS) {
+    throw new Error('A CSS parser is already defined in expose object.');
+  }
 
-  function position() {
-    var start = { line: lineno, column: column };
-    if (!options.position) return positionNoop;
+  context.expose.parseCSS = function(css, options){
+    options = options || {};
 
-    return function(node){
-      node.position = {
-        start: start,
-        end: { line: lineno, column: column }
-      };
+    /**
+     * Positional.
+     */
 
+    var lineno = 1;
+    var column = 1;
+
+    /**
+     * Update lineno and column based on `str`.
+     */
+
+    function updatePosition(str) {
+      var lines = str.match(/\n/g);
+      if (lines) lineno += lines.length;
+      var i = str.lastIndexOf('\n');
+      column = ~i ? str.length - i : column + str.length;
+    }
+
+    /**
+     * Mark position and patch `node.position`.
+     */
+
+    function position() {
+      var start = { line: lineno, column: column };
+      if (!options.position) return positionNoop;
+
+      return function(node){
+        node.position = {
+          start: start,
+          end: { line: lineno, column: column }
+        };
+
+        whitespace();
+        return node;
+      }
+    }
+
+    /**
+     * Return `node`.
+     */
+
+    function positionNoop(node) {
       whitespace();
       return node;
     }
-  }
 
-  /**
-   * Return `node`.
-   */
+    /**
+     * Error `msg`.
+     */
 
-  function positionNoop(node) {
-    whitespace();
-    return node;
-  }
+    function error(msg) {
+      var err = new Error(msg + ' near line ' + lineno + ':' + column);
+      err.line = lineno;
+      err.column = column;
+      err.source = css;
+      throw err;
+    }
 
-  /**
-   * Error `msg`.
-   */
+    /**
+     * Parse stylesheet.
+     */
 
-  function error(msg) {
-    var err = new Error(msg + ' near line ' + lineno + ':' + column);
-    err.line = lineno;
-    err.column = column;
-    err.source = css;
-    throw err;
-  }
+    function stylesheet() {
+      return {
+        type: 'stylesheet',
+        stylesheet: {
+          rules: rules()
+        }
+      };
+    }
 
-  /**
-   * Parse stylesheet.
-   */
+    /**
+     * Opening brace.
+     */
 
-  function stylesheet() {
-    return {
-      type: 'stylesheet',
-      stylesheet: {
-        rules: rules()
-      }
-    };
-  }
+    function open() {
+      return match(/^{\s*/);
+    }
 
-  /**
-   * Opening brace.
-   */
+    /**
+     * Closing brace.
+     */
 
-  function open() {
-    return match(/^{\s*/);
-  }
+    function close() {
+      return match(/^}/);
+    }
 
-  /**
-   * Closing brace.
-   */
+    /**
+     * Parse ruleset.
+     */
 
-  function close() {
-    return match(/^}/);
-  }
-
-  /**
-   * Parse ruleset.
-   */
-
-  function rules() {
-    var node;
-    var rules = [];
-    whitespace();
-    comments(rules);
-    while (css[0] != '}' && (node = atrule() || rule())) {
-      rules.push(node);
+    function rules() {
+      var node;
+      var rules = [];
+      whitespace();
       comments(rules);
+      while (css[0] != '}' && (node = atrule() || rule())) {
+        rules.push(node);
+        comments(rules);
+      }
+      return rules;
     }
-    return rules;
-  }
 
-  /**
-   * Match `re` and return captures.
-   */
+    /**
+     * Match `re` and return captures.
+     */
 
-  function match(re) {
-    var m = re.exec(css);
-    if (!m) return;
-    var str = m[0];
-    updatePosition(str);
-    css = css.slice(str.length);
-    return m;
-  }
+    function match(re) {
+      var m = re.exec(css);
+      if (!m) return;
+      var str = m[0];
+      updatePosition(str);
+      css = css.slice(str.length);
+      return m;
+    }
 
-  /**
-   * Parse whitespace.
-   */
+    /**
+     * Parse whitespace.
+     */
 
-  function whitespace() {
-    match(/^\s*/);
-  }
+    function whitespace() {
+      match(/^\s*/);
+    }
 
-  /**
-   * Parse comments;
-   */
+    /**
+     * Parse comments;
+     */
 
-  function comments(rules) {
-    var c;
-    rules = rules || [];
-    while (c = comment()) rules.push(c);
-    return rules;
-  }
+    function comments(rules) {
+      var c;
+      rules = rules || [];
+      while (c = comment()) rules.push(c);
+      return rules;
+    }
 
-  /**
-   * Parse comment.
-   */
+    /**
+     * Parse comment.
+     */
 
-  function comment() {
-    var pos = position();
-    if ('/' != css[0] || '*' != css[1]) return;
+    function comment() {
+      var pos = position();
+      if ('/' != css[0] || '*' != css[1]) return;
 
-    var i = 2;
-    while (null != css[i] && ('*' != css[i] || '/' != css[i + 1])) ++i;
-    i += 2;
+      var i = 2;
+      while (null != css[i] && ('*' != css[i] || '/' != css[i + 1])) ++i;
+      i += 2;
 
-    var str = css.slice(2, i - 2);
-    column += 2;
-    updatePosition(str);
-    css = css.slice(i);
-    column += 2;
+      var str = css.slice(2, i - 2);
+      column += 2;
+      updatePosition(str);
+      css = css.slice(i);
+      column += 2;
 
-    return pos({
-      type: 'comment',
-      comment: str
-    });
-  }
+      return pos({
+        type: 'comment',
+        comment: str
+      });
+    }
 
-  /**
-   * Parse selector.
-   */
+    /**
+     * Parse selector.
+     */
 
-  function selector() {
-    var m = match(/^([^{]+)/);
-    if (!m) return;
-    return m[0].trim().split(/\s*,\s*/);
-  }
+    function selector() {
+      var m = match(/^([^{]+)/);
+      if (!m) return;
+      return m[0].trim().split(/\s*,\s*/);
+    }
 
-  /**
-   * Parse declaration.
-   */
+    /**
+     * Parse declaration.
+     */
 
-  function declaration() {
-    var pos = position();
+    function declaration() {
+      var pos = position();
 
-    // prop
-    var prop = match(/^(\*?[-\/\*\w]+)\s*/);
-    if (!prop) return;
-    prop = prop[0];
+      // prop
+      var prop = match(/^(\*?[-\/\*\w]+)\s*/);
+      if (!prop) return;
+      prop = prop[0];
 
-    // :
-    if (!match(/^:\s*/)) return error("property missing ':'");
+      // :
+      if (!match(/^:\s*/)) return error("property missing ':'");
 
-    // val
-    var val = match(/^((?:'(?:\\'|.)*?'|"(?:\\"|.)*?"|\([^\)]*?\)|[^};])+)/);
-    if (!val) return error('property missing value');
+      // val
+      var val = match(/^((?:'(?:\\'|.)*?'|"(?:\\"|.)*?"|\([^\)]*?\)|[^};])+)/);
+      if (!val) return error('property missing value');
 
-    var ret = pos({
-      type: 'declaration',
-      property: prop,
-      value: val[0].trim()
-    });
+      var ret = pos({
+        type: 'declaration',
+        property: prop,
+        value: val[0].trim()
+      });
 
-    // ;
-    match(/^[;\s]*/);
+      // ;
+      match(/^[;\s]*/);
 
-    return ret;
-  }
+      return ret;
+    }
 
-  /**
-   * Parse declarations.
-   */
+    /**
+     * Parse declarations.
+     */
 
-  function declarations() {
-    var decls = [];
+    function declarations() {
+      var decls = [];
 
-    if (!open()) return error("missing '{'");
-    comments(decls);
-
-    // declarations
-    var decl;
-    while (decl = declaration()) {
-      decls.push(decl);
+      if (!open()) return error("missing '{'");
       comments(decls);
+
+      // declarations
+      var decl;
+      while (decl = declaration()) {
+        decls.push(decl);
+        comments(decls);
+      }
+
+      if (!close()) return error("missing '}'");
+      return decls;
     }
 
-    if (!close()) return error("missing '}'");
-    return decls;
-  }
+    /**
+     * Parse keyframe.
+     */
 
-  /**
-   * Parse keyframe.
-   */
+    function keyframe() {
+      var m;
+      var vals = [];
+      var pos = position();
 
-  function keyframe() {
-    var m;
-    var vals = [];
-    var pos = position();
+      while (m = match(/^(from|to|\d+%|\.\d+%|\d+\.\d+%)\s*/)) {
+        vals.push(m[1]);
+        match(/^,\s*/);
+      }
 
-    while (m = match(/^(from|to|\d+%|\.\d+%|\d+\.\d+%)\s*/)) {
-      vals.push(m[1]);
-      match(/^,\s*/);
+      if (!vals.length) return;
+
+      return pos({
+        type: 'keyframe',
+        values: vals,
+        declarations: declarations()
+      });
     }
 
-    if (!vals.length) return;
+    /**
+     * Parse keyframes.
+     */
 
-    return pos({
-      type: 'keyframe',
-      values: vals,
-      declarations: declarations()
-    });
-  }
+    function atkeyframes() {
+      var pos = position();
+      var m = match(/^@([-\w]+)?keyframes */);
 
-  /**
-   * Parse keyframes.
-   */
+      if (!m) return;
+      var vendor = m[1];
 
-  function atkeyframes() {
-    var pos = position();
-    var m = match(/^@([-\w]+)?keyframes */);
+      // identifier
+      var m = match(/^([-\w]+)\s*/);
+      if (!m) return error("@keyframes missing name");
+      var name = m[1];
 
-    if (!m) return;
-    var vendor = m[1];
+      if (!open()) return error("@keyframes missing '{'");
 
-    // identifier
-    var m = match(/^([-\w]+)\s*/);
-    if (!m) return error("@keyframes missing name");
-    var name = m[1];
+      var frame;
+      var frames = comments();
+      while (frame = keyframe()) {
+        frames.push(frame);
+        frames = frames.concat(comments());
+      }
 
-    if (!open()) return error("@keyframes missing '{'");
+      if (!close()) return error("@keyframes missing '}'");
 
-    var frame;
-    var frames = comments();
-    while (frame = keyframe()) {
-      frames.push(frame);
-      frames = frames.concat(comments());
+      return pos({
+        type: 'keyframes',
+        name: name,
+        vendor: vendor,
+        keyframes: frames
+      });
     }
 
-    if (!close()) return error("@keyframes missing '}'");
+    /**
+     * Parse supports.
+     */
 
-    return pos({
-      type: 'keyframes',
-      name: name,
-      vendor: vendor,
-      keyframes: frames
-    });
-  }
+    function atsupports() {
+      var pos = position();
+      var m = match(/^@supports *([^{]+)/);
 
-  /**
-   * Parse supports.
-   */
+      if (!m) return;
+      var supports = m[1].trim();
 
-  function atsupports() {
-    var pos = position();
-    var m = match(/^@supports *([^{]+)/);
+      if (!open()) return error("@supports missing '{'");
 
-    if (!m) return;
-    var supports = m[1].trim();
+      var style = comments().concat(rules());
 
-    if (!open()) return error("@supports missing '{'");
+      if (!close()) return error("@supports missing '}'");
 
-    var style = comments().concat(rules());
-
-    if (!close()) return error("@supports missing '}'");
-
-    return pos({
-      type: 'supports',
-      supports: supports,
-      rules: style
-    });
-  }
-
-  /**
-   * Parse media.
-   */
-
-  function atmedia() {
-    var pos = position();
-    var m = match(/^@media *([^{]+)/);
-
-    if (!m) return;
-    var media = m[1].trim();
-
-    if (!open()) return error("@media missing '{'");
-
-    var style = comments().concat(rules());
-
-    if (!close()) return error("@media missing '}'");
-
-    return pos({
-      type: 'media',
-      media: media,
-      rules: style
-    });
-  }
-
-  /**
-   * Parse paged media.
-   */
-
-  function atpage() {
-    var pos = position();
-    var m = match(/^@page */);
-    if (!m) return;
-
-    var sel = selector() || [];
-
-    if (!open()) return error("@page missing '{'");
-    var decls = comments();
-
-    // declarations
-    var decl;
-    while (decl = declaration()) {
-      decls.push(decl);
-      decls = decls.concat(comments());
+      return pos({
+        type: 'supports',
+        supports: supports,
+        rules: style
+      });
     }
 
-    if (!close()) return error("@page missing '}'");
+    /**
+     * Parse media.
+     */
 
-    return pos({
-      type: 'page',
-      selectors: sel,
-      declarations: decls
-    });
-  }
+    function atmedia() {
+      var pos = position();
+      var m = match(/^@media *([^{]+)/);
 
-  /**
-   * Parse document.
-   */
+      if (!m) return;
+      var media = m[1].trim();
 
-  function atdocument() {
-    var pos = position();
-    var m = match(/^@([-\w]+)?document *([^{]+)/);
-    if (!m) return;
+      if (!open()) return error("@media missing '{'");
 
-    var vendor = (m[1] || '').trim();
-    var doc = m[2].trim();
+      var style = comments().concat(rules());
 
-    if (!open()) return error("@document missing '{'");
+      if (!close()) return error("@media missing '}'");
 
-    var style = comments().concat(rules());
+      return pos({
+        type: 'media',
+        media: media,
+        rules: style
+      });
+    }
 
-    if (!close()) return error("@document missing '}'");
+    /**
+     * Parse paged media.
+     */
 
-    return pos({
-      type: 'document',
-      document: doc,
-      vendor: vendor,
-      rules: style
-    });
-  }
+    function atpage() {
+      var pos = position();
+      var m = match(/^@page */);
+      if (!m) return;
 
-  /**
-   * Parse import
-   */
+      var sel = selector() || [];
 
-  function atimport() {
-    return _atrule('import');
-  }
+      if (!open()) return error("@page missing '{'");
+      var decls = comments();
 
-  /**
-   * Parse charset
-   */
+      // declarations
+      var decl;
+      while (decl = declaration()) {
+        decls.push(decl);
+        decls = decls.concat(comments());
+      }
 
-  function atcharset() {
-    return _atrule('charset');
-  }
+      if (!close()) return error("@page missing '}'");
 
-  /**
-   * Parse namespace
-   */
+      return pos({
+        type: 'page',
+        selectors: sel,
+        declarations: decls
+      });
+    }
 
-  function atnamespace() {
-    return _atrule('namespace')
-  }
+    /**
+     * Parse document.
+     */
 
-  /**
-   * Parse non-block at-rules
-   */
+    function atdocument() {
+      var pos = position();
+      var m = match(/^@([-\w]+)?document *([^{]+)/);
+      if (!m) return;
 
-  function _atrule(name) {
-    var pos = position();
-    var m = match(new RegExp('^@' + name + ' *([^;\\n]+);'));
-    if (!m) return;
-    var ret = { type: name };
-    ret[name] = m[1].trim();
-    return pos(ret);
-  }
+      var vendor = (m[1] || '').trim();
+      var doc = m[2].trim();
 
-  /**
-   * Parse at rule.
-   */
+      if (!open()) return error("@document missing '{'");
 
-  function atrule() {
-    return atkeyframes()
-      || atmedia()
-      || atsupports()
-      || atimport()
-      || atcharset()
-      || atnamespace()
-      || atdocument()
-      || atpage();
-  }
+      var style = comments().concat(rules());
 
-  /**
-   * Parse rule.
-   */
+      if (!close()) return error("@document missing '}'");
 
-  function rule() {
-    var pos = position();
-    var sel = selector();
+      return pos({
+        type: 'document',
+        document: doc,
+        vendor: vendor,
+        rules: style
+      });
+    }
 
-    if (!sel) return;
-    comments();
+    /**
+     * Parse import
+     */
 
-    return pos({
-      type: 'rule',
-      selectors: sel,
-      declarations: declarations()
-    });
-  }
+    function atimport() {
+      return _atrule('import');
+    }
 
-  return stylesheet();
-};
+    /**
+     * Parse charset
+     */
 
+    function atcharset() {
+      return _atrule('charset');
+    }
+
+    /**
+     * Parse namespace
+     */
+
+    function atnamespace() {
+      return _atrule('namespace')
+    }
+
+    /**
+     * Parse non-block at-rules
+     */
+
+    function _atrule(name) {
+      var pos = position();
+      var m = match(new RegExp('^@' + name + ' *([^;\\n]+);'));
+      if (!m) return;
+      var ret = { type: name };
+      ret[name] = m[1].trim();
+      return pos(ret);
+    }
+
+    /**
+     * Parse at rule.
+     */
+
+    function atrule() {
+      return atkeyframes()
+        || atmedia()
+        || atsupports()
+        || atimport()
+        || atcharset()
+        || atnamespace()
+        || atdocument()
+        || atpage();
+    }
+
+    /**
+     * Parse rule.
+     */
+
+    function rule() {
+      var pos = position();
+      var sel = selector();
+
+      if (!sel) return;
+      comments();
+
+      return pos({
+        type: 'rule',
+        selectors: sel,
+        declarations: declarations()
+      });
+    }
+
+    return stylesheet();
+  };
+
+}(typeof exports === 'object' && exports || this));

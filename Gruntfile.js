@@ -20,8 +20,8 @@ module.exports = function(grunt) {
         separator: '\n\n'
       },
       dist: {
-        src: ['lib/<%= pkg.name %>', 'lib/vendor/css-parse.js'],
-        dest: 'dist/<%= pkg.name %>'
+        src: ['lib/expose.js', 'lib/vendor/css-parse.js'],
+        dest: 'dist/expose.js'
       },
     },
     uglify: {
@@ -29,8 +29,8 @@ module.exports = function(grunt) {
         banner: '<%= banner %>'
       },
       dist: {
-        src: '<%= concat.dist.dest %>',
-        dest: 'dist/<%= pkg.name %>.min.js'
+        src: 'dist/expose.js',
+        dest: 'dist/expose.min.js'
       },
     },
     mocha: {
@@ -52,7 +52,7 @@ module.exports = function(grunt) {
         options: {
           jshintrc: 'lib/.jshintrc'
         },
-        src: ['lib/**/*.js']
+        src: ['lib/**/*.js', '!lib/vendor/*']
       },
       test: {
         src: ['test/**/*.js'],
