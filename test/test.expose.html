@@ -7,10 +7,11 @@
 </head>
 <body>
   <div id="mocha"></div>
-  <!--<script src="node_modules/grunt-mocha/phantomjs/bridge.js"></script>-->
-
   <script src="node_modules/mocha/mocha.js"></script>
   <script src="node_modules/expect.js/expect.js"></script>
+
+  <script src="node_modules/grunt-mocha/phantomjs/bridge.js"></script>
+  
 
   <!-- Include dependencies for tests -->
   <script src="lib/expose.js"></script>
@@ -21,7 +22,7 @@
   </script>
 
   <!-- Include all tests -->
-  <script src="test/expose.js_test.js"></script>
+  <script src="test/test.expose.js"></script>
 
   <!-- Include the mocha-sauce client -->
   <script src="node_modules/mocha-sauce/client.js"></script>
