@@ -2,23 +2,22 @@
 <head>
   <meta charset="utf-8">
   <title>Expose.js test</title>
-  <link rel="stylesheet" href="../node_modules/mocha/mocha.css" />
-  <base href="../";
+  <base href="../">
+  <link rel="stylesheet" href="node_modules/mocha/mocha.css" />
 </head>
 <body>
   <div id="mocha"></div>
-  
+  <!--<script src="node_modules/grunt-mocha/phantomjs/bridge.js"></script>-->
+
   <script src="node_modules/mocha/mocha.js"></script>
-
-  <script>mocha.setup('bdd')</script>
-
-  <script src="node_modules/grunt-mocha/phantomjs/bridge.js"></script>
-
   <script src="node_modules/expect.js/expect.js"></script>
 
   <!-- Include dependencies for tests -->
   <script src="lib/expose.js"></script>
+  <script src="lib/vendor/css-parse.js"></script>
+
   <script>
+    mocha.setup('bdd');
   </script>
 
   <!-- Include all tests -->
@@ -28,9 +27,8 @@
   <script src="node_modules/mocha-sauce/client.js"></script>
 
   <!-- Run the tests! -->
-  <script>
+  <script> 
     mochaSaucePlease();
-    // mocha.run();
   </script>
 
 </body>

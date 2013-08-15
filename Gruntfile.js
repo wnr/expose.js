@@ -7,19 +7,21 @@ module.exports = function(grunt) {
     // Metadata.
     pkg: grunt.file.readJSON('package.json'),
     banner: '/*! <%= pkg.name %> - v<%= pkg.version %> - ' +
-      '<%= grunt.template.today("yyyy-mm-dd") %>\n' +
-      '<%= pkg.homepage ? "* " + pkg.homepage + "\\n" : "" %>' +
-      '* Copyright (c) <%= grunt.template.today("yyyy") %> <%= pkg.author.name %>;' +
-      ' Licensed <%= _.pluck(pkg.licenses, "type").join(", ") %> */\n',
+            '<%= grunt.template.today("yyyy-mm-dd") %>\n' +
+            '<%= pkg.homepage ? " * " + pkg.homepage + "\\n" : "" %>' +
+            ' * Copyright (c) <%= grunt.template.today("yyyy") %> <%= pkg.author.name %>;' +
+            ' Licensed <%= _.pluck(pkg.licenses, "type").join(", ") %>\n' +
+            ' */\n\n\n',
     // Task configuration.
     concat: {
       options: {
         banner: '<%= banner %>',
-        stripBanners: true
+        stripBanners: false,
+        separator: '\n\n'
       },
       dist: {
-        src: ['lib/<%= pkg.name %>.js'],
-        dest: 'dist/<%= pkg.name %>.js'
+        src: ['lib/<%= pkg.name %>', 'lib/vendor/css-parse.js'],
+        dest: 'dist/<%= pkg.name %>'
       },
     },
     uglify: {
@@ -79,6 +81,14 @@ module.exports = function(grunt) {
           message: 'Project built'
         }
       }
+    },
+    connect: {
+      server: {
+        options: {
+          port: 8888,
+          keepalive: true
+        }
+      }
     }
   });
 
@@ -91,7 +101,10 @@ module.exports = function(grunt) {
 
   grunt.loadNpmTasks('grunt-notify');
 
+  grunt.loadNpmTasks('grunt-contrib-connect');
+
   // Default task.
   grunt.registerTask('default', ['jshint', 'mocha', 'concat', 'uglify', 'notify:done']);
 
+  grunt.registerTask('serve', 'connect');
 };
