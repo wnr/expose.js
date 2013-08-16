@@ -20,7 +20,7 @@ module.exports = function(grunt) {
         separator: '\n\n'
       },
       dist: {
-        src: ['lib/expose.js', 'lib/vendor/css-parse.js'],
+        src: ['lib/expose.js', 'lib/log.js', 'lib/ajax.js', 'lib/vendor/css-parse.js'],
         dest: 'dist/expose.js'
       },
     },

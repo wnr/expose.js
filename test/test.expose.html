@@ -3,7 +3,21 @@
   <meta charset="utf-8">
   <title>Expose.js test</title>
   <base href="../">
+  <link rel="stylesheet" href="test/css/style1.css" />
   <link rel="stylesheet" href="node_modules/mocha/mocha.css" />
+  <link rel="stylesheet" href="test/css/style2.css" />
+
+  <style>
+    #visual {
+      background-color: #eee;
+    }
+  </style>
+
+  <style>
+    #visual .error {
+      color: red;
+    }
+  </style>
 </head>
 <body>
   <div id="mocha"></div>
@@ -11,10 +25,12 @@
   <script src="node_modules/expect.js/expect.js"></script>
 
   <script src="node_modules/grunt-mocha/phantomjs/bridge.js"></script>
-  
+
 
   <!-- Include dependencies for tests -->
   <script src="lib/expose.js"></script>
+  <script src="lib/log.js"></script>
+  <script src="lib/ajax.js"></script>
   <script src="lib/vendor/css-parse.js"></script>
 
   <script>
@@ -32,5 +48,7 @@
     mochaSaucePlease();
   </script>
 
+  <div id="visual">
+  </div>
 </body>
 </html>
