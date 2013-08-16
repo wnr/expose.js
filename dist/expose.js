@@ -1,4 +1,4 @@
-/*! expose.js - v0.1.0 - 2013-08-15
+/*! expose.js - v0.1.0 - 2013-08-16
  * https://github.com/wnr/expose.js
  * Copyright (c) 2013 Lucas Wiener; Licensed MIT
  */
@@ -18,11 +18,210 @@
   context.expose = {};
   var expose = context.expose;
 
+  expose.css = {};
+
+  expose.css.getInternal = function(cb) {
+    if(typeof cb !== 'function') {
+      throw new Error('Callback required');
+    }
+
+    var output = '';
+
+    var stylesheets = document.getElementsByTagName('style');
+
+    for(var i = 0; i < stylesheets.length; i++) {
+      var css = stylesheets[i].firstChild.data;
+
+      output += css;
+    }
+
+    cb(output);
+  };
+
+  expose.css.getExternal = function(cb) {
+    /**
+     * Checks if the given stylesheet is an external stylesheet file.
+     */
+    function isExternal(stylesheet) {
+      return stylesheet.href && stylesheet.href.length > 0;
+    }
+
+    function getExternals() {
+      //An array holding the external sheets to be read.
+      var externals = [];
+
+      //Loop over all external and internal defined stylesheets in the order they are defined.
+      for(var i = 0; i < document.styleSheets.length; i++) {
+        //Get the current stylesheet.
+        var stylesheet = document.styleSheets[i];
+
+        //Check if it is an external stylesheet.
+        if(isExternal(stylesheet)) {
+          //It is an external stylesheet.
+
+          //Add it to the externals array.
+          externals.push(stylesheet);
+        }
+      }
+
+      return externals;
+    }
+
+    function readRules(stylesheet, cb) {
+      var rules = stylesheet.cssRules || stylesheet.rule || null;
+
+      if(!rules) {
+        //Unable to read css directly from DOM. So load them with ajax and read content that way.
+
+        expose.ajax(stylesheet.href, function(rules) {
+          cb(rules);
+        });
+
+        return;
+      }
+
+      var output = '';
+
+      for(var i = 0; i < rules.length; i++) {
+        output += rules[i].cssText;
+      }
+
+      var args = Array.prototype.slice.call(arguments, 2);
+      args.unshift(output);
+
+      cb.apply(context.expose, args);
+    }
+
+    if(typeof cb !== 'function') {
+      throw new Error('Callback required');
+    }
+
+    //Define the variable to use for concatination.
+    var output = '';
+
+    var externals = getExternals();
+    var processed = 0;
+
+    var onRulesRead = function (rules) {
+      if(rules === false) {
+        throw new Error('Failed to read rules of stylesheet');
+      }
+
+      output += rules;
+
+      processed++;
+
+      if(processed === externals.length) {
+        cb(output);
+      }
+    };
+
+    for(var i = 0; i < externals.length; i++) {
+      readRules(externals[i], onRulesRead);
+    }
+  };
+
+  expose.utils = {};
+
   expose.run = function() {
 
   };
 
-}(typeof exports === 'object' && exports || this));
+}(this));
+
+(function(context) {
+  'use strict';
+
+  if(!context.expose) {
+    throw new Error('log function requires an expose object to be defined in context.');
+  }
+
+  if(context.expose.log) {
+    throw new Error('A log function is already defined in expose object.');
+  }
+
+  context.expose.log = function() {
+    if(!console || !console.log) {
+      return;
+    }
+
+    var message;
+
+    for(var i = 0; i < arguments.length; i++) {
+      message += arguments[i];
+
+      if((i+1) === arguments.length) {
+        message += ' ';
+      }
+    }
+
+    if(message) {
+      console.log(message);
+    }
+  };
+
+}(this));
+
+/**
+ * Tweaked Ajax functions from Quirksmode.
+ *
+ * Taken from https://github.com/scottjehl/Respond/blob/master/respond.src.js
+ * branch: master
+ * commit: 50a62fec6712db4a31d8707aacaaf7063c0a5a29
+ * 
+ * Changed by Lucas Wiener to fit better into the project.
+ */
+
+(function(context) {
+  'use strict';
+
+  if(!context.expose) {
+    throw new Error('ajax function requires an expose object to be defined in context.');
+  }
+
+  if(context.expose.ajax) {
+    throw new Error('An ajax function is already defined in expose object.');
+  }
+
+  //Define ajax object.
+  var xmlHttp = (function() {
+    var xmlhttpmethod = false;
+
+    try {
+      xmlhttpmethod = new context.XMLHttpRequest();
+    } catch(e){
+      xmlhttpmethod = new context.ActiveXObject('Microsoft.XMLHTTP');
+    }
+
+    return function() {
+      return xmlhttpmethod;
+    };
+  })();
+
+  context.expose.ajax = function(url, callback) {
+    var req = xmlHttp();
+
+    if(!req) {
+      return;
+    }
+
+    req.open('GET', url, true);
+   
+    req.onreadystatechange = function () {
+      if (req.readyState !== 4 || req.status !== 200 && req.status !== 304){
+        return;
+      }
+
+      callback(req.responseText);
+    };
+
+    if (req.readyState === 4){
+      return;
+    }
+
+    req.send( null );
+  };
+}(this));
 
 /**
  * Downloaded from https://github.com/visionmedia/css-parse/blob/master/index.js
@@ -503,4 +702,4 @@
     return stylesheet();
   };
 
-}(typeof exports === 'object' && exports || this));
+}(this));

@@ -54,7 +54,7 @@ describe('expose.js', function() {
           expect(!!~style2).to.equal(true);
 
           //Now, style1 should be before mocha that should be before style2.
-          expect(style1 < mocha < style2).to.equal(true)
+          expect(style1 < mocha < style2).to.equal(true);
 
           done();
         });
