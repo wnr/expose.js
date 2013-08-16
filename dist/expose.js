@@ -74,6 +74,12 @@
         //Unable to read css directly from DOM. So load them with ajax and read content that way.
 
         expose.ajax(stylesheet.href, function(rules) {
+          if(rules === false) {
+            throw new Error('Failed to read rules of stylesheet');
+          }
+
+          expose.log('Read external stylesheet with ajax:', stylesheet.href);
+
           cb(rules);
         });
 
@@ -89,6 +95,8 @@
       var args = Array.prototype.slice.call(arguments, 2);
       args.unshift(output);
 
+      expose.log('Read external stylesheet with cssText:', stylesheet.href);
+      
       cb.apply(context.expose, args);
     }
 
@@ -103,10 +111,6 @@
     var processed = 0;
 
     var onRulesRead = function (rules) {
-      if(rules === false) {
-        throw new Error('Failed to read rules of stylesheet');
-      }
-
       output += rules;
 
       processed++;
