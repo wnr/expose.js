@@ -1,4 +1,4 @@
-/*! expose.js - v0.1.0 - 2013-08-16
+/*! expose.js - v0.1.0 - 2013-08-17
  * https://github.com/wnr/expose.js
  * Copyright (c) 2013 Lucas Wiener; Licensed MIT
  */
@@ -12,15 +12,130 @@
  * Licensed under the MIT license.
  */
 
-(function(context) {
+(function(expose) {
   'use strict';
 
-  context.expose = {};
-  var expose = context.expose;
+  expose.run = function() {
 
+  };
+
+})(this.expose = this.expose || {});
+
+(function(expose) {
+  'use strict';
+
+  if(!expose) {
+    throw new Error('Invalid expose given.');
+  }
+
+  if(expose.log) {
+    expose.log('A log function is already defined. Discarding log module.');
+    return;
+  }
+
+  expose.log = function() {
+    if(!console || !console.log) {
+      return;
+    }
+
+    var message;
+
+    for(var i = 0; i < arguments.length; i++) {
+      message += arguments[i];
+
+      if((i+1) === arguments.length) {
+        message += ' ';
+      }
+    }
+
+    if(message) {
+      console.log(message);
+    }
+  };
+
+})(this.expose = this.expose || {});
+
+/**
+ * Tweaked Ajax functions from Quirksmode.
+ *
+ * Taken from https://github.com/scottjehl/Respond/blob/master/respond.src.js
+ * branch: master
+ * commit: 50a62fec6712db4a31d8707aacaaf7063c0a5a29
+ * 
+ * Changed by Lucas Wiener to fit better into the project.
+ */
+
+(function(expose, global) {
+  'use strict';
+
+  if(!expose) {
+    throw new Error('Invalid expose given.');
+  }
+
+  if(expose.ajax) {
+    expose.log('An ajax function is already. Discarding ajax module.');
+    return;
+  }
+
+  //Define ajax object.
+  var xmlHttp = (function() {
+    var xmlhttpmethod = false;
+
+    try {
+      xmlhttpmethod = new global.XMLHttpRequest();
+    } catch(e){
+      xmlhttpmethod = new global.ActiveXObject('Microsoft.XMLHTTP');
+    }
+
+    return function() {
+      return xmlhttpmethod;
+    };
+  })();
+
+  expose.ajax = function(url, callback) {
+    var req = xmlHttp();
+
+    if(!req) {
+      return;
+    }
+
+    req.open('GET', url, true);
+   
+    req.onreadystatechange = function () {
+      if (req.readyState !== 4 || req.status !== 200 && req.status !== 304){
+        return;
+      }
+
+      callback(req.responseText);
+    };
+
+    if (req.readyState === 4){
+      return;
+    }
+
+    req.send( null );
+  };
+}(this.expose = this.expose || {}, this));
+
+(function(expose) {
+  'use strict';
+
+  if(!expose) {
+    throw new Error('Invalid expose given.');
+  }
+
+  if(expose.css) {
+    expose.log('A css object already exists. Discarding css module.');
+    return;
+  }
+
+  //Define the css object of the expose object, that will handle all the css reading
+  //and manipulating.
   expose.css = {};
 
-  expose.css.getInternal = function(cb) {
+  var css = expose.css;
+  
+  css.getInternal = function(cb) {
     if(typeof cb !== 'function') {
       throw new Error('Callback required');
     }
@@ -38,7 +153,7 @@
     cb(output);
   };
 
-  expose.css.getExternal = function(cb) {
+  css.getExternal = function(cb) {
     /**
      * Checks if the given stylesheet is an external stylesheet file.
      */
@@ -97,7 +212,7 @@
 
       expose.log('Read external stylesheet with cssText:', stylesheet.href);
       
-      cb.apply(context.expose, args);
+      cb.apply(expose, args);
     }
 
     if(typeof cb !== 'function') {
@@ -125,107 +240,7 @@
     }
   };
 
-  expose.utils = {};
-
-  expose.run = function() {
-
-  };
-
-}(this));
-
-(function(context) {
-  'use strict';
-
-  if(!context.expose) {
-    throw new Error('log function requires an expose object to be defined in context.');
-  }
-
-  if(context.expose.log) {
-    throw new Error('A log function is already defined in expose object.');
-  }
-
-  context.expose.log = function() {
-    if(!console || !console.log) {
-      return;
-    }
-
-    var message;
-
-    for(var i = 0; i < arguments.length; i++) {
-      message += arguments[i];
-
-      if((i+1) === arguments.length) {
-        message += ' ';
-      }
-    }
-
-    if(message) {
-      console.log(message);
-    }
-  };
-
-}(this));
-
-/**
- * Tweaked Ajax functions from Quirksmode.
- *
- * Taken from https://github.com/scottjehl/Respond/blob/master/respond.src.js
- * branch: master
- * commit: 50a62fec6712db4a31d8707aacaaf7063c0a5a29
- * 
- * Changed by Lucas Wiener to fit better into the project.
- */
-
-(function(context) {
-  'use strict';
-
-  if(!context.expose) {
-    throw new Error('ajax function requires an expose object to be defined in context.');
-  }
-
-  if(context.expose.ajax) {
-    throw new Error('An ajax function is already defined in expose object.');
-  }
-
-  //Define ajax object.
-  var xmlHttp = (function() {
-    var xmlhttpmethod = false;
-
-    try {
-      xmlhttpmethod = new context.XMLHttpRequest();
-    } catch(e){
-      xmlhttpmethod = new context.ActiveXObject('Microsoft.XMLHTTP');
-    }
-
-    return function() {
-      return xmlhttpmethod;
-    };
-  })();
-
-  context.expose.ajax = function(url, callback) {
-    var req = xmlHttp();
-
-    if(!req) {
-      return;
-    }
-
-    req.open('GET', url, true);
-   
-    req.onreadystatechange = function () {
-      if (req.readyState !== 4 || req.status !== 200 && req.status !== 304){
-        return;
-      }
-
-      callback(req.responseText);
-    };
-
-    if (req.readyState === 4){
-      return;
-    }
-
-    req.send( null );
-  };
-}(this));
+})(this.expose = this.expose || {});
 
 /**
  * Downloaded from https://github.com/visionmedia/css-parse/blob/master/index.js
@@ -237,17 +252,18 @@
  * Changed by Lucas Wiener to work better with this project.
  */
 
-(function(context) {
+(function(expose) {
 
-  if(!context.expose) {
-    throw new Error('CSS parser requires an expose object to be defined in context.');
+  if(!expose) {
+    throw new Error('Invalid expose given.');
   }
 
-  if(context.expose.parseCSS) {
-    throw new Error('A CSS parser is already defined in expose object.');
+  if(expose.parseCSS) {
+    return;
+    expose.log('A CSS parser is already defined in expose object. Discarding CSS parser module.');
   }
 
-  context.expose.parseCSS = function(css, options){
+  expose.parseCSS = function(css, options){
     options = options || {};
 
     /**
@@ -706,4 +722,4 @@
     return stylesheet();
   };
 
-}(this));
+}(this.expose = this.expose || {}));
