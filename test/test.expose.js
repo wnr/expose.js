@@ -1,6 +1,6 @@
-'use strict';
-
 describe('expose.js', function() {
+  'use strict';
+
   it('should be an object', function() {
     expect(expose).to.be.an('object');
   });
@@ -74,8 +74,9 @@ describe('expose.js', function() {
             var rule = expose.css.rules[i];
 
             expect(rule.type).to.equal('rule');
-            done();
           }
+        
+          done();
         });
       });
     });

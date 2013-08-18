@@ -10,5 +10,9 @@
   "unused": true,
   "boss": true,
   "eqnull": true,
-  "node": true
+  "node": true,
+  "globals": {
+    "$": false,
+    "module": true
+  }
 }

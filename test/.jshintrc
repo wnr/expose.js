@@ -10,11 +10,13 @@
   "unused": true,
   "boss": true,
   "eqnull": true,
-  "node": true,
+  "browser": true,
   "globals": {
     "describe": true,
     "expect": true,
     "it": true,
-    "expose": true
+    "expose": true,
+    "$": false,
+    "console": false
   }
 }

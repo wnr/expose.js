@@ -10,5 +10,9 @@
   "boss": true,
   "eqnull": true,
   "browser": true,
-  "predef": ["console"]
+  "globals": {
+    "console": false,
+    "$": false,
+    "jQuery": false
+  }
 }
