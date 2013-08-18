@@ -1,55 +1,65 @@
 <html>
-<head>
-  <meta charset="utf-8">
-  <title>Expose.js test</title>
-  <base href="../">
-  <link rel="stylesheet" href="test/css/style1.css" />
-  <link rel="stylesheet" href="node_modules/mocha/mocha.css" />
-  <link rel="stylesheet" href="test/css/style2.css" />
+  <head>
+    <title>Expect.js test</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <style>
-    #visual {
-      background-color: #eee;
-    }
-  </style>
+    <link rel="stylesheet" href="css/style1.css" />
+    <link rel="stylesheet" href="../node_modules/mocha/mocha.css" />
+    <link rel="stylesheet" href="css/style2.css" />
 
-  <style>
-    #visual .error {
-      color: red;
-    }
-  </style>
-</head>
-<body>
-  <div id="mocha"></div>
-  <script src="node_modules/mocha/mocha.js"></script>
-  <script src="node_modules/expect.js/expect.js"></script>
+    <style>
+      #visual {
+        background-color: #eee;
+      }
+    </style>
 
-  <script src="node_modules/grunt-mocha/phantomjs/bridge.js"></script>
+    <style>
+      #visual .error {
+        color: red;
+      }
+    </style>
+    
+    <script src="../node_modules/mocha/mocha.js"></script>
+    <script>mocha.setup('bdd')</script>
 
+    <script src="../node_modules/expect.js/expect.js"></script>
+    <script src="../node_modules/grunt-mocha/phantomjs/bridge.js"></script>
 
-  <!-- Include dependencies for tests -->
-  <script src="lib/expose.js"></script>
-  <script src="lib/log.js"></script>
-  <script src="lib/ajax.js"></script>
-  <script src="lib/css.js"></script>
-  <script src="lib/vendor/css-parse.js"></script>
+    <!-- Include the mocha-sauce client -->
+    <script src="../node_modules/mocha-sauce/client.js"></script>
 
-  <script>
-    mocha.setup('bdd');
-  </script>
+    <!-- Include dependencies for tests -->
+    <script src="../lib/vendor/jquery-1.10.2.min.js"></script>
+    <script src="../lib/expose.js"></script>
+    <script src="../lib/log.js"></script>
+    <script src="../lib/ajax.js"></script>
+    <script src="../lib/css.js"></script>
+    <script src="../lib/vendor/css-parse.js"></script>
 
-  <!-- Include all tests -->
-  <script src="test/test.expose.js"></script>
+    <!-- Include all tests -->
+    <script src="test.expose.js"></script>
 
-  <!-- Include the mocha-sauce client -->
-  <script src="node_modules/mocha-sauce/client.js"></script>
+    <script>
+      function assert(expr, msg) {
+        if (!expr) throw new Error(msg || 'failed');
+      }
+    </script>
+    <script 
+    <script>
+      onload = function(){
+        mocha.checkLeaks();
+        mocha.globals(['foo']);
+        var runner = mocha.run();
 
-  <!-- Run the tests! -->
-  <script> 
-    mochaSaucePlease();
-  </script>
-
-  <div id="visual">
-  </div>
-</body>
+        // runner.on('test end', function(test){
+        //   console.log(test.fullTitle());
+        // });
+      };
+    </script>
+  </head>
+  <body>
+    <div id="mocha"></div>
+    <div id="visual">
+  </body>
 </html>
