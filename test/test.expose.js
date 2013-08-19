@@ -26,7 +26,18 @@ describe('expose.js', function() {
       it('should concat all internal stylesheets', function(done) {
         expose.css.getInternal(function(result) {
           expect(result).to.be.a('string');
-          expect(result).to.equal('\n      #visual {\n        background-color: #eee;\n      }\n    \n      #visual .error {\n        color: red;\n      }\n    ');
+          
+          //Read occurances of strings.
+          var style1 = result.indexOf('internalStyle1');
+          var style2 = result.indexOf('internalStyle2');
+
+          //Expect all to be found.
+          expect(!!~style1).to.equal(true);
+          expect(!!~style2).to.equal(true);
+
+          //Now, style1 should be before mocha that should be before style2.
+          expect(style1 < style2).to.equal(true);
+
           done();
         });
       });

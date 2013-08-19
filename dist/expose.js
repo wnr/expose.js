@@ -1,4 +1,4 @@
-/*! expose.js - v0.1.0 - 2013-08-18
+/*! expose.js - v0.1.0 - 2013-08-19
  * https://github.com/wnr/expose.js
  * Copyright (c) 2013 Lucas Wiener; Licensed MIT
  */
@@ -144,13 +144,9 @@
 
     var output = '';
 
-    var stylesheets = document.getElementsByTagName('style');
-
-    for(var i = 0; i < stylesheets.length; i++) {
-      var css = stylesheets[i].firstChild.data;
-
-      output += css;
-    }
+    $('style').each(function(i, stylesheet) {
+      output += $(stylesheet).html();
+    });
 
     cb(output);
   };
@@ -185,7 +181,19 @@
     }
 
     function readRules(stylesheet, cb) {
-      var rules = stylesheet.cssRules || stylesheet.rule || null;
+      function done(output) {
+        var args = Array.prototype.slice.call(arguments, 2);
+        args.unshift(output);
+
+        cb.apply(expose, args);
+      }
+
+      if(stylesheet.cssText) {
+        done(stylesheet.cssText);
+        return;
+      }
+
+      var rules = stylesheet.cssRules || stylesheet.rules || null;
 
       if(!rules) {
         //Unable to read css directly from DOM. So load them with ajax and read content that way.
@@ -206,15 +214,11 @@
       var output = '';
 
       for(var i = 0; i < rules.length; i++) {
-        output += rules[i].cssText;
+        var rule = rules[i];
+        output += rule.cssText;
       }
 
-      var args = Array.prototype.slice.call(arguments, 2);
-      args.unshift(output);
-
-      expose.log('Read external stylesheet with cssText:', stylesheet.href);
-      
-      cb.apply(expose, args);
+      done(output);
     }
 
     if(typeof cb !== 'function') {
@@ -404,18 +408,16 @@
         second: second[j]
       });
     }
-    
+
     return diff;
   };
 
 })(this.expose = this.expose || {});
 
 /**
- * Downloaded from https://github.com/visionmedia/css-parse/blob/master/index.js
+ * Downloaded from https://github.com/wnr/css-parse/blob/master/index.js
  * branch: master
- * commit: b1cd941d4a1e1e05be0c024ad8faefde3be7b60e
- *
- * author: https://github.com/visionmedia
+ * commit: d2e8fbb85193ab11d157bfc3f0b7e1f8d9ede677
  *
  * Changed by Lucas Wiener to work better with this project.
  */
@@ -440,6 +442,36 @@
 
     var lineno = 1;
     var column = 1;
+
+    /**
+     * Shim-wrapper for trim. Will use native trim if supported, otherwise the trim
+     * found at https://github.com/kriskowal/es5-shim/blob/master/es5-shim.js
+     * at commit 32ff9747d5baaa446d5a49d0078ed38fcff93ab0
+     *
+     * Modified a bit to not pollute String prototype.
+     */
+    
+    function trim(str) {
+      if (str === void 0 || str === null) {
+        throw new TypeError('trim called on null or undefined');
+      }
+
+      var ws = '\x09\x0A\x0B\x0C\x0D\x20\xA0\u1680\u180E\u2000\u2001\u2002\u2003' +
+      '\u2004\u2005\u2006\u2007\u2008\u2009\u200A\u202F\u205F\u3000\u2028' +
+      '\u2029\uFEFF';
+
+      if (!String.prototype.trim || ws.trim()) {
+        // http://blog.stevenlevithan.com/archives/faster-trim-javascript
+        // http://perfectionkills.com/whitespace-deviations/
+        ws = "[" + ws + "]";
+        var trimBeginRegexp = new RegExp("^" + ws + ws + "*");
+        var trimEndRegexp = new RegExp(ws + ws + "*$"); 
+
+        return String(str).replace(trimBeginRegexp, "").replace(trimEndRegexp, "");
+      }
+
+      return String(str).trim();
+    }
 
     /**
      * Update lineno and column based on `str`.
@@ -530,7 +562,7 @@
       var rules = [];
       whitespace();
       comments(rules);
-      while (css[0] != '}' && (node = atrule() || rule())) {
+      while (css.charAt(0) != '}' && (node = atrule() || rule())) {
         rules.push(node);
         comments(rules);
       }
@@ -575,10 +607,10 @@
 
     function comment() {
       var pos = position();
-      if ('/' != css[0] || '*' != css[1]) return;
+      if ('/' != css.charAt(0) || '*' != css.charAt(1)) return;
 
       var i = 2;
-      while (null != css[i] && ('*' != css[i] || '/' != css[i + 1])) ++i;
+      while (null != css.charAt(i) && ('*' != css.charAt(i) || '/' != css.charAt(i + 1))) ++i;
       i += 2;
 
       var str = css.slice(2, i - 2);
@@ -600,7 +632,7 @@
     function selector() {
       var m = match(/^([^{]+)/);
       if (!m) return;
-      return m[0].trim().split(/\s*,\s*/);
+      return trim(m[0]).split(/\s*,\s*/);
     }
 
     /**
@@ -625,7 +657,7 @@
       var ret = pos({
         type: 'declaration',
         property: prop,
-        value: val[0].trim()
+        value: trim(val[0])
       });
 
       // ;
@@ -722,7 +754,7 @@
       var m = match(/^@supports *([^{]+)/);
 
       if (!m) return;
-      var supports = m[1].trim();
+      var supports = trim(m[1]);
 
       if (!open()) return error("@supports missing '{'");
 
@@ -746,7 +778,7 @@
       var m = match(/^@media *([^{]+)/);
 
       if (!m) return;
-      var media = m[1].trim();
+      var media = trim(m[1]);
 
       if (!open()) return error("@media missing '{'");
 
@@ -800,8 +832,8 @@
       var m = match(/^@([-\w]+)?document *([^{]+)/);
       if (!m) return;
 
-      var vendor = (m[1] || '').trim();
-      var doc = m[2].trim();
+      var vendor = trim(m[1] || '');
+      var doc = trim(m[2]);
 
       if (!open()) return error("@document missing '{'");
 
@@ -850,7 +882,7 @@
       var m = match(new RegExp('^@' + name + ' *([^;\\n]+);'));
       if (!m) return;
       var ret = { type: name };
-      ret[name] = m[1].trim();
+      ret[name] = trim(m[1]);
       return pos(ret);
     }
 
@@ -889,5 +921,6 @@
 
     return stylesheet();
   };
+
 
 }(this.expose = this.expose || {}));
